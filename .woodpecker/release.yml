@@ -1,0 +1,33 @@
+when:
+  event: [push]
+  branch: [app]
+
+steps:
+  - name: check for [release]
+    image: node:20
+    commands:
+      - |
+        if git log -1 --pretty=%B | grep -q "\[release\]"; then
+          echo "Release tag found, continuing..."
+        else
+          echo "No [release] tag in commit message. Skipping."
+          exit 78
+        fi
+
+  - name: ready release
+    image: node:20
+    commands:
+      - apt-get install -y zip
+      - mkdir -p temp
+      - zip -r temp/linux.zip PolyModLoader/linux
+      - zip -r temp/windows.zip PolyModLoader/windows
+
+  - name: create release
+    image: woodpeckerci/plugin-release
+    settings:
+      files:
+        - windows/resources/app.asar
+        - temp/linux.zip
+        - temp/windows.zip
+      api_key:
+        from_secret: ACCESS_TOKEN
