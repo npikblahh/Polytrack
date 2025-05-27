@@ -1,18 +1,9 @@
 when:
   event: [push]
-  branch: [app]
+  ref:
+    - refs/tags/*
 
 steps:
-  - name: check for [release]
-    image: node:20
-    commands:
-      - |
-        if git log -1 --pretty=%B | grep -q "\[release\]"; then
-          echo "Release tag found, continuing..."
-        else
-          echo "No [release] tag in commit message. Skipping."
-          exit 78
-        fi
 
   - name: ready release
     image: node:20
