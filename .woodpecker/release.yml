@@ -1,11 +1,10 @@
-when:
-  event: [push]
-  ref:
-    - refs/tags/*
+when: 
+  event:
+    - tag
 
 steps:
 
-  - name: ready release
+  ready-release:
     image: node:20
     commands:
       - apt-get update
@@ -14,7 +13,7 @@ steps:
       - zip -r temp/linux.zip linux
       - zip -r temp/windows.zip windows
 
-  - name: create release
+  create-release:
     image: woodpeckerci/plugin-release
     settings:
       files:
@@ -23,3 +22,6 @@ steps:
         - temp/windows.zip
       api_key:
         from_secret: ACCESS_TOKEN
+      when:
+      event:
+        - tag
