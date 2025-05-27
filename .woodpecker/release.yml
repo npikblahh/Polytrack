@@ -17,6 +17,7 @@ steps:
   - name: ready release
     image: node:20
     commands:
+      - apt-get update
       - apt-get install -y zip
       - mkdir -p temp
       - zip -r temp/linux.zip PolyModLoader/linux
