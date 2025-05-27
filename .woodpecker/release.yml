@@ -20,8 +20,8 @@ steps:
       - apt-get update
       - apt-get install -y zip
       - mkdir -p temp
-      - zip -r temp/linux.zip PolyModLoader/linux
-      - zip -r temp/windows.zip PolyModLoader/windows
+      - zip -r temp/linux.zip linux
+      - zip -r temp/windows.zip windows
 
   - name: create release
     image: woodpeckerci/plugin-release
