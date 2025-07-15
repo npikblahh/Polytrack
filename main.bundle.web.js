@@ -10,6 +10,8 @@ async function createWorkerFromURL(url) {
 }
 
 ActivePolyModLoader.importMods().then(() => createWorkerFromURL("https://pml.orangy.cfd/0rangy/PolyModLoader/0.5.0/simulation_worker.bundle.web.js")).then(() => {
+  var worker = new Worker(ActivePolyModLoader.workerUrl);
+  var globalFn = () => {
   var e = {
       77: (e, t, n) => {
           "use strict";
@@ -43547,7 +43549,7 @@ ActivePolyModLoader.importMods().then(() => createWorkerFromURL("https://pml.ora
               iU.set(this, !1),
               rU.set(this, 0),
               aU.set(this, new Map),
-              oU(this, nU, new Worker(ActivePolyModLoader.workerUrl), "f"),
+              oU(this, nU, worker, "f"),
               null != t && null != n ? (oU(this, tU, t, "f"),
               n.hasLoaded() ? lU(this, eU, "m", sU).call(this, e, t) : n.addCompleteListener(( () => {
                   lU(this, eU, "m", sU).call(this, e, t)
@@ -48743,5 +48745,46 @@ ActivePolyModLoader.importMods().then(() => createWorkerFromURL("https://pml.ora
       }()
   }
   )()
+  }
+
+  ActivePolyModLoader.registerScriptWideMixin = (token, type, code, occurrence) => {
+    if (!occurrence) occurrence = 1;
+    let globalCode = globalFn.toString();
+
+    let index = -1;
+
+    let count = 0;
+    let pos = 0;
+    while (count < occurrence) {
+      index = globalCode.indexOf(token, pos);
+      if (index === -1) return;
+      count++;
+      pos = index + token.length;
+    }
+
+    switch (type) {
+      case MixinType.SCRIPTBEFORE:
+        globalCode = globalCode.slice(0, index) + code + globalCode.slice(index)
+        break;
+      case MixinType.SCRIPTAFTER:
+        globalCode = globalCode.slice(0, index + token.length) + code + globalCode.slice(index + token.length);
+        break;
+      case MixinType.SCRIPTREPLACE:
+        globalCode = globalCode.slice(0, index) + code + globalCode.slice(index + token.length);
+        break;
+      default:
+        return;
+    }
+
+    globalFn = eval(`(${globalCode})`)
+  }
+  ActivePolyModLoader.preInitMods();
+
+  ActivePolyModLoader.simPreInitMods();
+  worker.postMessage({
+    codeMixins: ActivePolyModLoader.simWorkerCodeMixins
+  });
+
+  globalFn();
 }
 );

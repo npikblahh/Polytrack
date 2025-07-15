@@ -2,6 +2,8 @@ import { ActivePolyModLoader, MixinType, SoundManager, EditorExtras } from "./Po
 ActivePolyModLoader.initStorage(localStorage);
 window.polyModLoader = ActivePolyModLoader;
 ActivePolyModLoader.importMods().then(() => {
+  var worker = new Worker("simulation_worker.bundle.js");
+  var globalFn = () => {
   var e = {
       77: (e, t, n) => {
           "use strict";
@@ -43535,7 +43537,7 @@ ActivePolyModLoader.importMods().then(() => {
               iU.set(this, !1),
               rU.set(this, 0),
               aU.set(this, new Map),
-              oU(this, nU, new Worker("simulation_worker.bundle.js"), "f"),
+              oU(this, nU, worker, "f"),
               null != t && null != n ? (oU(this, tU, t, "f"),
               n.hasLoaded() ? lU(this, eU, "m", sU).call(this, e, t) : n.addCompleteListener(( () => {
                   lU(this, eU, "m", sU).call(this, e, t)
@@ -48734,5 +48736,45 @@ ActivePolyModLoader.importMods().then(() => {
       ActivePolyModLoader.postInitMods();
   }
   )()
+}
+  ActivePolyModLoader.registerScriptWideMixin = (token, type, code, occurrence) => {
+    if (!occurrence) occurrence = 1;
+    let globalCode = globalFn.toString();
+
+    let index = -1;
+
+    let count = 0;
+    let pos = 0;
+    while (count < occurrence) {
+      index = globalCode.indexOf(token, pos);
+      if (index === -1) return;
+      count++;
+      pos = index + token.length;
+    }
+
+    switch (type) {
+      case MixinType.SCRIPTBEFORE:
+        globalCode = globalCode.slice(0, index) + code + globalCode.slice(index)
+        break;
+      case MixinType.SCRIPTAFTER:
+        globalCode = globalCode.slice(0, index + token.length) + code + globalCode.slice(index + token.length);
+        break;
+      case MixinType.SCRIPTREPLACE:
+        globalCode = globalCode.slice(0, index) + code + globalCode.slice(index + token.length);
+        break;
+      default:
+        return;
+    }
+
+    globalFn = eval(`(${globalCode})`)
+  }
+  ActivePolyModLoader.preInitMods();
+
+  ActivePolyModLoader.simPreInitMods();
+  worker.postMessage({
+    codeMixins: ActivePolyModLoader.simWorkerCodeMixins
+  });
+
+  globalFn();
 }
 );

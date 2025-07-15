@@ -1,4 +1,4 @@
-( () => {
+let globalFn = () => {
     var e = {
         1312: (e, t, n) => {
             var i;
@@ -29139,4 +29139,55 @@
     }
     );
 }
-)();
+
+let waitForCodeMixins = new Promise((resolve) => {
+    const handler = (e) => {
+        self.removeEventListener("message", handler);
+        resolve(e);
+    };
+
+    self.addEventListener("message", handler);
+});
+
+let registerScriptWideMixin = (token, type, code, occurrence) => {
+    if (!occurrence) occurrence = 1;
+    let globalCode = globalFn.toString();
+
+    let index = -1;
+
+    let count = 0;
+    let pos = 0;
+    while (count < occurrence) {
+      index = globalCode.indexOf(token, pos);
+      if (index === -1) return;
+      count++;
+      pos = index + token.length;
+    }
+
+    switch (type) {
+      case MixinType.SCRIPTBEFORE:
+        globalCode = globalCode.slice(0, index) + code + globalCode.slice(index)
+        break;
+      case MixinType.SCRIPTAFTER:
+        globalCode = globalCode.slice(0, index + token.length) + code + globalCode.slice(index + token.length);
+        break;
+      case MixinType.SCRIPTREPLACE:
+        globalCode = globalCode.slice(0, index) + code + globalCode.slice(index + token.length);
+        break;
+      default:
+        return;
+    }
+
+    globalFn = eval(`(${globalCode})`)
+  }
+
+waitForCodeMixins.then((mixinData) => {
+    console.log(mixinData);
+    let mixins = mixinData.data.codeMixins;
+
+    for (const mixin of mixins) {
+        registerScriptWideMixin(...mixin);
+    }
+
+    globalFn();
+});

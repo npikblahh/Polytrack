@@ -135,6 +135,12 @@ export class PolyMod {
         this.modDependencies = manifest.dependencies;
     }
     /**
+     * Function to run during initialization of the mods. This is called *before* polytrack has been loaded and *before* everything has been declared (aside from core PML elements).
+     * 
+     * @param {PolyModLoader} pmlInstance - The instance of {@link PolyModLoader}.
+     */
+    preInit = (pmlInstance: PolyModLoader) => { }
+    /**
      * Function to run during initialization of mods. Note that this is called *before* polytrack itself is loaded, 
      * but *after* everything has been declared.
      * 
@@ -145,6 +151,12 @@ export class PolyMod {
      * Function to run after all mods and polytrack have been initialized and loaded.
      */
     postInit = () => { }
+    /**
+     * Function to run before initialization of `simulation_worker.bundle.js` and *before* everything has been declared (aside from core PML elements).
+     * 
+     * @param {PolyModLoader} pmlInstance - The instance of {@link PolyModLoader}.
+     */
+    simPreInit = (pmlInstance: PolyModLoader) => { }
     /**
      * Function to run before initialization of `simulation_worker.bundle.js`.
      */
@@ -190,7 +202,19 @@ export enum MixinType {
     /**
      * Remove code between 2 given tokens, but class wide. Inclusive.
      */
-    CLASSREPLACE = 7
+    CLASSREPLACE = 7,
+    /**
+     * Inject code before a given token, but script wide.
+     */
+    SCRIPTBEFORE = 9,
+    /**
+     * Inject code after a given token, but script wide.
+     */
+    SCRIPTAFTER = 10,
+    /**
+     * Replace code between 2 given tokens, but script wide. Inclusive.
+     */
+    SCRIPTREPLACE = 11
 }
 
 export enum SettingType {
@@ -333,6 +357,12 @@ export class PolyModLoader {
         funcString: string,
         func2Sstring: string | null
     }>;
+    #simWorkerCodeMixins: Array<{
+        token: string,
+        mixinType: MixinType,
+        code: string,
+        occurrence: number
+    }>;
 
     #settings: Array<string>
     #settingConstructor: Array<string>
@@ -370,6 +400,14 @@ export class PolyModLoader {
         *  }}
         */
         this.#simWorkerFuncMixins = [];
+        /**
+         * @type {{
+         *      token: string,
+         *      mixinType: MixinType,
+         *      code: string,
+         *      occurrence: number
+         */
+        this.#simWorkerCodeMixins = [];
 
         this.#settings = [];
         this.#settingConstructor = [];
@@ -832,6 +870,19 @@ export class PolyModLoader {
     #preInitPML() {
         this.registerFuncMixin("polyInitFunction", MixinType.INSERT, `, D = 0;`, `ActivePolyModLoader.popUpClass = S;`)
     }
+    preInitMods() {
+        for (let polyMod of this.#allMods) {
+            if (polyMod.isLoaded) {
+                try {
+                    polyMod.preInit(this);
+                } catch (err) {
+                    alert(`Mod ${polyMod.name} failed to pre initialize and will be unloaded.`);
+                    console.error("Error in pre initializing mod:", err);
+                    this.setModLoaded(polyMod, false);
+                }
+            }
+        }
+    }
     initMods() {
         this.#preInitPML();
         let initList: Array<string> = []
@@ -909,9 +960,26 @@ export class PolyModLoader {
             }
         }
     }
+    simPreInitMods() {
+        for (let polyMod of this.#allMods) {
+            try {
+                if (polyMod.isLoaded) polyMod.simPreInit(this);
+            } catch (err) {
+                alert(`Mod ${polyMod.name} failed to pre initialize in simulation and will be unloaded.`);
+                console.error("Error in pre initializing mod in simulation:", err);
+                this.setModLoaded(polyMod, false);
+            }
+        }
+    }
     simInitMods() {
         for (let polyMod of this.#allMods) {
-            if (polyMod.isLoaded) polyMod.simInit();
+            try {
+                if (polyMod.isLoaded) polyMod.simInit();
+            } catch (err) {
+                alert(`Mod ${polyMod.name} failed to initialize in simulation and will be unloaded.`);
+                console.error("Error in initializing mod in simulation:", err);
+                this.setModLoaded(polyMod, false);
+            }
         }
     }
     /**
@@ -945,6 +1013,9 @@ export class PolyModLoader {
     get simWorkerFuncMixins() {
         return [...this.#simWorkerFuncMixins];
     }
+    get simWorkerCodeMixins() {
+        return [...this.#simWorkerCodeMixins]
+    }
     getFromPolyTrack = (path: string): any => { }
     /**
      * Inject mixin under scope {@link scope} with target function name defined by {@link path}.
@@ -969,8 +1040,18 @@ export class PolyModLoader {
     registerFuncMixin = (path: string, mixinType: MixinType, accessors: string | Array<string>, func: Function | string, extraOptinonal?: Function | string) => { }
     registerClassWideMixin = (path: string, mixinType: MixinType, firstToken: string, funcOrSecondToken: string | Function, funcOptional?: Function | string) => { }
     /**
+     * Inject mixin anywhere in the code.
+     * This only injects code in `main.bundle.js`.
+     * 
+     * @param {string} token        - The token to identify the injection point.
+     * @param {MixinType} mixinType - The type of injection. Only `SCRIPTBEFORE`, `SCRIPTAFTER`, and `SCRIPTREPLACE` are supported.
+     * @param {string} code         - The code to inject.
+     * @param {number} occurrence   - The occurrence of the injection point. Default is `1`, meaning the first occurrence.
+     */
+    registerScriptWideMixin = (token: string, mixinType: MixinType, code: string, occurrence: number = 1) => { }
+    /**
      * Inject mixin under scope {@link scope} with target function name defined by {@link path}.
-     * This only injects functions in `simulation_worker.bundle.js`.
+     * This only injects functions in `main.bundle.js`.
      * 
      * @param {string} scope        - The scope under which mixin is injected.
      * @param {string} path         - The path under the {@link scope} which the mixin targets.
@@ -1006,6 +1087,23 @@ export class PolyModLoader {
             accessors: accessors,
             funcString: typeof func === "function" ? func.toString() : func,
             func2Sstring: extraOptinonal ? extraOptinonal.toString() : null
+        })
+    }
+    /**
+     * Inject mixin anywhere in the code.
+     * This only injects code in `simulation_worker.bundle.js`.
+     * 
+     * @param {string} token        - The token to identify the injection point.
+     * @param {MixinType} mixinType - The type of injection. Only `SCRIPTBEFORE`, `SCRIPTAFTER`, and `SCRIPTREPLACE` are supported.
+     * @param {string} code         - The code to inject.
+     * @param {number} occurrence   - The occurrence of the injection point. Default is `1`, meaning the first occurrence.
+     */
+    registerSimWorkerCodeMixin(token: string, mixinType: MixinType, code: string, occurrence: number = 1) {
+        this.#simWorkerCodeMixins.push({
+            token: token,
+            mixinType: mixinType,
+            code: code,
+            occurrence: occurrence
         })
     }
 }
