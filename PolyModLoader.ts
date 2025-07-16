@@ -1051,7 +1051,7 @@ export class PolyModLoader {
     registerScriptWideMixin = (token: string, mixinType: MixinType, code: string, occurrence: number = 1) => { }
     /**
      * Inject mixin under scope {@link scope} with target function name defined by {@link path}.
-     * This only injects functions in `main.bundle.js`.
+     * This only injects functions in `simulation_worker.bundle.js`.
      * 
      * @param {string} scope        - The scope under which mixin is injected.
      * @param {string} path         - The path under the {@link scope} which the mixin targets.
