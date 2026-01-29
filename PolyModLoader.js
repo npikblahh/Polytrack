@@ -2,10 +2,10 @@
  * PolyModLoader - iPad Optimized & Main Bundle Synced
  */
 
-// We use a regular variable instead of 'await fetch' to prevent EOF errors
+// Global version variable (Non-blocking to prevent EOF errors)
 var pmlversion = "v0.5.2-1";
 
-// Safely update the version if Codeberg is reachable, without blocking the script
+// Non-blocking fetch for the version update
 fetch("https://codeberg.org/api/v1/repos/polytrackmods/PolyModLoader/tags")
     .then(r => r.json())
     .then(tags => { if(tags[0]) pmlversion = tags[0].name; })
@@ -39,32 +39,36 @@ class PolyModLoaderClass {
         this.polyVersion = "0.5.2";
         this.pmlVersion = pmlversion;
         this.allMods = [];
+        this.settings = [];
+        this.keybindings = [];
     }
 
+    // Required by main.bundle.js
     initStorage(storage) {
-        console.log("PML: Storage Initialized");
+        console.log("PML: Storage linked.");
     }
 
+    // Required by main.bundle.js
     async importMods() {
-        console.log("PML: Importing Mods...");
         const ui = document.getElementById("ui");
         if (!ui) return;
 
         const loader = document.createElement("div");
         loader.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#192042;z-index:10000;display:flex;justify-content:center;align-items:center;color:white;font-family:sans-serif;";
-        loader.innerHTML = "<h2>BYPASS ACTIVE - LOADING</h2>";
+        loader.innerHTML = '<div style="text-align:center;"><img src="./images/logo.svg" style="width:200px;"><h2 style="margin-top:20px;">INITIALIZING MODS</h2></div>';
         ui.appendChild(loader);
 
-        // Required delay for main.bundle.js sync
-        await new Promise(r => setTimeout(r, 500));
+        // Simulate load time for engine stability
+        await new Promise(r => setTimeout(r, 800));
         loader.remove();
     }
 
+    // Required by main.bundle.js
     initMods() {
-        console.log("PML: Mods Initialized");
+        console.log("PML: Mods initialized.");
     }
 }
 
-// These specific export names are required by your main.bundle.js
+// CRITICAL: main.bundle.js imports exactly these two things
 export const ActivePolyModLoader = new PolyModLoaderClass();
 export async function checkForUpdate() { return false; }
