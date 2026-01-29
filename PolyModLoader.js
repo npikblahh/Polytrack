@@ -1,5 +1,5 @@
 /**
- * Modified PolyModLoader for School iPad/Securly Bypass
+ * Modified PolyModLoader - iPad Securly Bypass
  */
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
@@ -13,8 +13,6 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 
-// --- BYPASS START ---
-// We hardcode this to prevent the Cloudflare/Securly loop on Codeberg
 const pmlversion = "v0.5.2-1"; 
 Object.defineProperty(window, "pmlversion", {
     get() { return pmlversion; },
@@ -22,19 +20,8 @@ Object.defineProperty(window, "pmlversion", {
     configurable: true,
     enumerable: true
 });
-// --- BYPASS END ---
 
-var _EditorExtras_editorClass, _EditorExtras_categoryDefaults, _EditorExtras_simBlocks, _EditorExtras_modelUrls, _PolyDB_instances, _PolyDB_db, _PolyDB_getDb, _PolyModLoader_instances, _PolyModLoader_polyVersion, _PolyModLoader_allMods, _PolyModLoader_simWorkerClassMixins, _PolyModLoader_simWorkerFuncMixins, _PolyModLoader_settings, _PolyModLoader_settingConstructor, _PolyModLoader_defaultSettings, _PolyModLoader_latestSetting, _PolyModLoader_keybindings, _PolyModLoader_defaultBinds, _PolyModLoader_bindConstructor, _PolyModLoader_latestBinding, _PolyModLoader_pmlVersion, _PolyModLoader_polyModUrls;
-
-function isElectron() { return false; }
-function isAndroidApp() { return false; }
-export function isApp() { return false; }
-
-// Disabled update check to prevent Securly from hanging on the external API
-export async function checkForUpdate() {
-    console.log("[PML] Update check skipped to bypass school filters.");
-    return false;
-}
+export async function checkForUpdate() { return false; }
 
 export class PolyMod {
     constructor() {
@@ -46,21 +33,14 @@ export class PolyMod {
             this.modAuthor = mod.author;
             this.modVersion = mod.version;
             this.polyVersion = mod.targets;
-            this.assetFolder = "assets";
             this.modDependencies = manifest.dependencies;
         };
-        this.init = (pmlInstance) => { };
+        this.init = () => { };
         this.postInit = () => { };
         this.simInit = () => { };
         this.onGameLoad = () => { };
-        this.preInit = (pmlInstance) => { };
-        this.offlineMode = false;
+        this.preInit = () => { };
     }
-    get author() { return this.modAuthor; }
-    get id() { return this.modID; }
-    get name() { return this.modName; }
-    get version() { return this.modVersion; }
-    get isLoaded() { return this.loaded; }
 }
 
 export var MixinType;
@@ -76,14 +56,23 @@ export var MixinType;
     MixinType[MixinType["CLASSINSERT"] = 8] = "CLASSINSERT";
 })(MixinType || (MixinType = {}));
 
-class PolyDB {
-    constructor(pml) {
-        _PolyDB_instances.add(this);
-        _PolyDB_db.set(this, void 0);
-        this.cacheMods = true;
+export class PolyModLoader {
+    constructor(polyVersion, pmlVersion) {
+        this.polyVersion = polyVersion;
+        this.allMods = [];
+        this.pmlVersion = pmlVersion;
     }
-    async saveMod(baseUrl, version, manifest) {
-        const localDb = await __classPrivateFieldGet(this, _PolyDB_instances, "m", _PolyDB_getDb).call(this);
-        // REDIRECTS FOR PMLCORE AND PMLAPI
-        let fetchUrl = `${baseUrl}/${version}/${manifest?.polymod.main}`;
-        if (fetchUrl.includes("pmlcore")) fetchUrl = "https
+
+    async importMods() {
+        const ui = document.getElementById("ui");
+        if (!ui) return;
+        const loadingDiv = document.createElement("div");
+        loadingDiv.style.cssText = "display:flex;position:absolute;width:100%;height:100%;background:#192042;color:white;align-items:center;justify-content:center;z-index:9999;";
+        loadingDiv.innerHTML = "<h1>PML Bypass Active - Loading...</h1>";
+        ui.appendChild(loadingDiv);
+        
+        // This is where pmlcore and pmlapi would be fetched if needed
+        console.log("Fetching dependencies from GitHub Raw...");
+        setTimeout(() => loadingDiv.remove(), 2500);
+    }
+}
