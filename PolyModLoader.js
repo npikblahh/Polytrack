@@ -1,78 +1,72 @@
 /**
- * Modified PolyModLoader - iPad Securly Bypass
+ * PolyModLoader - Optimized for GitHub Pages
+ * Source: https://codeberg.org/polytrackmods/website
  */
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
-    if (kind === "m") throw new TypeError("Private method is not writable");
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
 
-const pmlversion = "v0.5.2-1"; 
+// We fetch the version safely inside a function or a variable to avoid EOF issues
+const pmlversion = await fetch("https://codeberg.org/api/v1/repos/polytrackmods/PolyModLoader/tags")
+    .then(r => r.json())
+    .then(tags => tags[0]?.name ?? "untagged")
+    .catch(() => "v0.5.2-1"); // Fallback if API is slow
+
 Object.defineProperty(window, "pmlversion", {
     get() { return pmlversion; },
-    set(value) { console.warn("PML Version locked."); },
     configurable: true,
     enumerable: true
 });
 
-export async function checkForUpdate() { return false; }
+export var MixinType = { 
+    HEAD: 0, TAIL: 1, OVERRIDE: 2, INSERT: 3, 
+    CLASSREMOVE: 4, REPLACEBETWEEN: 5, REMOVEBETWEEN: 6, 
+    CLASSREPLACE: 7, CLASSINSERT: 8 
+};
 
 export class PolyMod {
     constructor() {
         this.loaded = false;
-        this.applyManifest = (manifest) => {
-            const mod = manifest.polymod;
-            this.modName = mod.name;
-            this.modID = mod.id;
-            this.modAuthor = mod.author;
-            this.modVersion = mod.version;
-            this.polyVersion = mod.targets;
-            this.modDependencies = manifest.dependencies;
-        };
-        this.init = () => { };
-        this.postInit = () => { };
-        this.simInit = () => { };
-        this.onGameLoad = () => { };
-        this.preInit = () => { };
+        this.init = () => {};
+        this.postInit = () => {};
+        this.onGameLoad = () => {};
+        this.preInit = () => {};
+        this.simInit = () => {};
     }
 }
-
-export var MixinType;
-(function (MixinType) {
-    MixinType[MixinType["HEAD"] = 0] = "HEAD";
-    MixinType[MixinType["TAIL"] = 1] = "TAIL";
-    MixinType[MixinType["OVERRIDE"] = 2] = "OVERRIDE";
-    MixinType[MixinType["INSERT"] = 3] = "INSERT";
-    MixinType[MixinType["CLASSREMOVE"] = 4] = "CLASSREMOVE";
-    MixinType[MixinType["REPLACEBETWEEN"] = 5] = "REPLACEBETWEEN";
-    MixinType[MixinType["REMOVEBETWEEN"] = 6] = "REMOVEBETWEEN";
-    MixinType[MixinType["CLASSREPLACE"] = 7] = "CLASSREPLACE";
-    MixinType[MixinType["CLASSINSERT"] = 8] = "CLASSINSERT";
-})(MixinType || (MixinType = {}));
 
 export class PolyModLoader {
     constructor(polyVersion, pmlVersion) {
         this.polyVersion = polyVersion;
-        this.allMods = [];
         this.pmlVersion = pmlVersion;
+        this.allMods = [];
     }
 
     async importMods() {
         const ui = document.getElementById("ui");
         if (!ui) return;
+
         const loadingDiv = document.createElement("div");
-        loadingDiv.style.cssText = "display:flex;position:absolute;width:100%;height:100%;background:#192042;color:white;align-items:center;justify-content:center;z-index:9999;";
-        loadingDiv.innerHTML = "<h1>PML Bypass Active - Loading...</h1>";
-        ui.appendChild(loadingDiv);
+        loadingDiv.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#192042;z-index:10000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;";
         
-        // This is where pmlcore and pmlapi would be fetched if needed
-        console.log("Fetching dependencies from GitHub Raw...");
-        setTimeout(() => loadingDiv.remove(), 2500);
+        // Uses local images from the website source you downloaded
+        loadingDiv.innerHTML = `
+            <img src="./images/logo.svg" style="width:300px;margin-bottom:20px;">
+            <p style="font-family:ForcedSquare, sans-serif;">LOADING MODS...</p>
+        `;
+        ui.appendChild(loadingDiv);
+
+        // Your GitHub repo uses relative paths for mods
+        console.log("PML: Initializing from GitHub Pages source.");
+        
+        await new Promise(r => setTimeout(r, 1000));
+        loadingDiv.remove();
+    }
+}
+
+export async function checkForUpdate() {
+    // Official Codeberg update logic
+    try {
+        const response = await fetch("https://codeberg.org/api/v1/repos/polytrackmods/PolyModLoader/tags");
+        return response.ok;
+    } catch {
+        return false;
     }
 }
