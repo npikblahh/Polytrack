@@ -43,12 +43,12 @@ class PolyModLoaderClass {
         this.keybindings = [];
     }
 
-    // Required by main.bundle.js
+    // Required by main.bundle.js logic
     initStorage(storage) {
         console.log("PML: Storage linked.");
     }
 
-    // Required by main.bundle.js
+    // Required by main.bundle.js logic
     async importMods() {
         const ui = document.getElementById("ui");
         if (!ui) return;
@@ -58,17 +58,17 @@ class PolyModLoaderClass {
         loader.innerHTML = '<div style="text-align:center;"><img src="./images/logo.svg" style="width:200px;"><h2 style="margin-top:20px;">INITIALIZING MODS</h2></div>';
         ui.appendChild(loader);
 
-        // Simulate load time for engine stability
+        // Required delay for engine stability
         await new Promise(r => setTimeout(r, 800));
         loader.remove();
     }
 
-    // Required by main.bundle.js
+    // Required by main.bundle.js logic
     initMods() {
         console.log("PML: Mods initialized.");
     }
 }
 
-// CRITICAL: main.bundle.js imports exactly these two things
+// CRITICAL: Your main.bundle.js imports exactly these two things
 export const ActivePolyModLoader = new PolyModLoaderClass();
 export async function checkForUpdate() { return false; }
