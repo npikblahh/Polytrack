@@ -1,11 +1,10 @@
 /**
- * PolyModLoader - iPad Optimized & Main Bundle Synced
+ * PolyModLoader - Synced with main.bundle.js (preInitMods fix)
  */
 
-// Global version variable (Non-blocking to prevent EOF errors)
 var pmlversion = "v0.5.2-1";
 
-// Non-blocking fetch for the version update
+// Non-blocking version update to prevent EOF errors
 fetch("https://codeberg.org/api/v1/repos/polytrackmods/PolyModLoader/tags")
     .then(r => r.json())
     .then(tags => { if(tags[0]) pmlversion = tags[0].name; })
@@ -43,12 +42,17 @@ class PolyModLoaderClass {
         this.keybindings = [];
     }
 
-    // Required by main.bundle.js logic
+    // Required by main.bundle.js:42841
+    preInitMods() {
+        console.log("PML: Pre-initializing mods...");
+    }
+
+    // Required by main.bundle.js
     initStorage(storage) {
         console.log("PML: Storage linked.");
     }
 
-    // Required by main.bundle.js logic
+    // Required by main.bundle.js
     async importMods() {
         const ui = document.getElementById("ui");
         if (!ui) return;
@@ -58,17 +62,21 @@ class PolyModLoaderClass {
         loader.innerHTML = '<div style="text-align:center;"><img src="./images/logo.svg" style="width:200px;"><h2 style="margin-top:20px;">INITIALIZING MODS</h2></div>';
         ui.appendChild(loader);
 
-        // Required delay for engine stability
         await new Promise(r => setTimeout(r, 800));
         loader.remove();
     }
 
-    // Required by main.bundle.js logic
+    // Required by main.bundle.js
     initMods() {
         console.log("PML: Mods initialized.");
     }
+
+    // Added to prevent future "is not a function" errors
+    onGameLoad() {
+        console.log("PML: Game loaded.");
+    }
 }
 
-// CRITICAL: Your main.bundle.js imports exactly these two things
+// CRITICAL: Export the instance the bundle is looking for
 export const ActivePolyModLoader = new PolyModLoaderClass();
 export async function checkForUpdate() { return false; }
